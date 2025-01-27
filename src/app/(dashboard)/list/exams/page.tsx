@@ -3,11 +3,12 @@ import Table from "@/app/components/Table";
 import TableSearch from "@/app/components/TableSearch";
 import FormModal from "@/app/components/FormModal";
 
-import { examsData, role } from "@/lib/data";
 import Image from "next/image";
 import { Class, Exam, Prisma, Subject, Teacher } from "@prisma/client";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import prisma from "@/lib/prisma";
+import { currentUserId, role } from "@/lib/utils";
+import FormContainer from "@/app/components/FormContainer";
 
 type ExamList = Exam & {
   lesson: {
@@ -36,10 +37,14 @@ const columns = [
     accessor: "date",
     className: "hidden md:table-cell",
   },
-  {
-    header: "Actions",
-    accessor: "action",
-  },
+  ...(role === "admin" || role === "teacher"
+    ? [
+        {
+          header: "Actions",
+          accessor: "action",
+        },
+      ]
+    : []),
 ];
 
 const renderRow = (item: ExamList) => (
@@ -60,8 +65,8 @@ const renderRow = (item: ExamList) => (
         {role === "admin" ||
           (role === "teacher" && (
             <>
-              <FormModal table="exam" type="update" data={item} />
-              <FormModal table="exam" type="delete" id={item.id} />
+              <FormContainer table="exam" type="update" data={item} />
+              <FormContainer table="exam" type="delete" id={item.id} />
             </>
           ))}
       </div>
@@ -103,6 +108,38 @@ export default async function ExamListPage({
       }
     }
   }
+
+  // ROLE CONDITIONS
+
+  switch (role) {
+    case "admin":
+      break;
+    case "teacher":
+      query.lesson.teacherId = currentUserId!;
+      break;
+    case "student":
+      query.lesson.class = {
+        students: {
+          some: {
+            id: currentUserId!,
+          },
+        },
+      };
+      break;
+    case "parent":
+      query.lesson.class = {
+        students: {
+          some: {
+            parentId: currentUserId!,
+          },
+        },
+      };
+      break;
+
+    default:
+      break;
+  }
+
   const [data, count] = await prisma.$transaction([
     prisma.exam.findMany({
       where: query,
@@ -136,7 +173,9 @@ export default async function ExamListPage({
               <Image src="/sort.png" alt="" width={14} height={14} />
             </button>
             {role === "admin" ||
-              (role === "teacher" && <FormModal table="exam" type="create" />)}
+              (role === "teacher" && (
+                <FormContainer table="exam" type="create" />
+              ))}
           </div>
         </div>
       </div>

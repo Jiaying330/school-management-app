@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  postgress:
+    image:postgress: 15
+    container_name: postgres_db
+    environment:
+      POSTGRES_PASSWORD: lama123456
+      POSTGRES_USER: lamadev
+      POSTGRES_DB: school
+    ports:
+      - "5432:5432"
+    volumes:
+      - 2e246a896fa4916990ff351ab19b0877224db941d6412def82dfe98db4059b7b
+
+  app:
+    container_name: nextjs_app
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL: postgresql://lamadev:lama123456@localhost:5432/school
+    depends_on:
+      - postgress

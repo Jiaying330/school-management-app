@@ -1,10 +1,11 @@
+import FormContainer from "@/app/components/FormContainer";
 import FormModal from "@/app/components/FormModal";
 import Pagination from "@/app/components/Pagination";
 import Table from "@/app/components/Table";
 import TableSearch from "@/app/components/TableSearch";
-import { role, studentsData } from "@/lib/data";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
+import { role } from "@/lib/utils";
 import { Class, Prisma, Student } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
@@ -36,10 +37,14 @@ const columns = [
     accessor: "address",
     className: "hidden lg:table-cell",
   },
-  {
-    header: "Actions",
-    accessor: "action",
-  },
+  ...(role === "admin"
+    ? [
+        {
+          header: "Actions",
+          accessor: "action",
+        },
+      ]
+    : []),
 ];
 const renderRow = (item: StudentList) => (
   <tr
@@ -71,7 +76,7 @@ const renderRow = (item: StudentList) => (
           </button>
         </Link>
         {role === "admin" && (
-          <FormModal table="student" type="delete" id={item.id} />
+          <FormContainer table="student" type="delete" id={item.id} />
         )}
       </div>
     </td>
@@ -137,7 +142,9 @@ export default async function StudentListPage({
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
               <Image src="/sort.png" alt="" width={14} height={14} />
             </button>
-            {role === "admin" && <FormModal table="student" type="create" />}
+            {role === "admin" && (
+              <FormContainer table="student" type="create" />
+            )}
           </div>
         </div>
       </div>

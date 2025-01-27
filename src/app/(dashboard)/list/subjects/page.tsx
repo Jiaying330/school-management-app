@@ -2,11 +2,13 @@ import Pagination from "@/app/components/Pagination";
 import Table from "@/app/components/Table";
 import TableSearch from "@/app/components/TableSearch";
 import FormModal from "@/app/components/FormModal";
-import { role, subjectsData } from "@/lib/data";
 import Image from "next/image";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { Prisma, Subject, Teacher } from "@prisma/client";
+// import { role } from "@/lib/utils";
+import FormContainer from "@/app/components/FormContainer";
+import { auth } from "@clerk/nextjs/server";
 
 type SubjectList = Subject & { teachers: Teacher[] };
 
@@ -26,32 +28,36 @@ const columns = [
   },
 ];
 
-const renderRow = (item: SubjectList) => (
-  <tr
-    key={item.id}
-    className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
-  >
-    <td className="flex items-center gap-4 p-4">{item.name}</td>
-    <td className="hidden md:table-cell">
-      {item.teachers.map((teacher) => teacher.name).join(",")}
-    </td>
-    <td>
-      <div className="flex items-center gap-2">
-        {role === "admin" && (
-          <>
-            <FormModal table="subject" type="update" data={item} />
-            <FormModal table="subject" type="delete" id={item.id} />
-          </>
-        )}
-      </div>
-    </td>
-  </tr>
-);
 export default async function SubjectListPage({
   searchParams,
 }: {
   searchParams: { [key: string]: string | undefined };
 }) {
+  const { sessionClaims } = auth();
+  const role = (sessionClaims?.metadata as { role?: string })?.role;
+
+  const renderRow = (item: SubjectList) => (
+    <tr
+      key={item.id}
+      className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
+    >
+      <td className="flex items-center gap-4 p-4">{item.name}</td>
+      <td className="hidden md:table-cell">
+        {item.teachers.map((teacher) => teacher.name).join(",")}
+      </td>
+      <td>
+        <div className="flex items-center gap-2">
+          {role === "admin" && (
+            <>
+              <FormContainer table="subject" type="update" data={item} />
+              <FormContainer table="subject" type="delete" id={item.id} />
+            </>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+
   const { page, ...queryParams } = searchParams;
   const p = page ? parseInt(page) : 1;
 
@@ -99,7 +105,7 @@ export default async function SubjectListPage({
             </button>
             {role === "admin" ||
               (role === "teacher" && (
-                <FormModal table="teacher" type="create" />
+                <FormContainer table="subject" type="create" />
               ))}
           </div>
         </div>

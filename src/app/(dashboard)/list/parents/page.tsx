@@ -1,10 +1,11 @@
+import FormContainer from "@/app/components/FormContainer";
 import FormModal from "@/app/components/FormModal";
 import Pagination from "@/app/components/Pagination";
 import Table from "@/app/components/Table";
 import TableSearch from "@/app/components/TableSearch";
-import { parentsData, role } from "@/lib/data";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
+import { role } from "@/lib/utils";
 import { Parent, Prisma, Student } from "@prisma/client";
 import Image from "next/image";
 
@@ -30,10 +31,14 @@ const columns = [
     accessor: "address",
     className: "hidden lg:table-cell",
   },
-  {
-    header: "Actions",
-    accessor: "action",
-  },
+  ...(role === "admin"
+    ? [
+        {
+          header: "Actions",
+          accessor: "action",
+        },
+      ]
+    : []),
 ];
 
 const renderRow = (item: ParentList) => (
@@ -56,8 +61,8 @@ const renderRow = (item: ParentList) => (
       <div className="flex items-center gap-2">
         {role === "admin" && (
           <>
-            <FormModal table="parent" type="update" data={item} />
-            <FormModal table="parent" type="delete" id={item.id} />
+            <FormContainer table="parent" type="update" data={item} />
+            <FormContainer table="parent" type="delete" id={item.id} />
           </>
         )}
       </div>
@@ -117,7 +122,7 @@ export default async function ParentListPage({
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
               <Image src="/sort.png" alt="" width={14} height={14} />
             </button>
-            {role === "admin" && <FormModal table="parent" type="create" />}
+            {role === "admin" && <FormContainer table="parent" type="create" />}
           </div>
         </div>
       </div>

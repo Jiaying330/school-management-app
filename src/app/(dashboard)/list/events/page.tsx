@@ -1,10 +1,11 @@
+import FormContainer from "@/app/components/FormContainer";
 import FormModal from "@/app/components/FormModal";
 import Pagination from "@/app/components/Pagination";
 import Table from "@/app/components/Table";
 import TableSearch from "@/app/components/TableSearch";
-import { eventsData, role } from "@/lib/data";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
+import { currentUserId, role } from "@/lib/utils";
 import { Class, Event, Prisma } from "@prisma/client";
 import Image from "next/image";
 
@@ -34,10 +35,14 @@ const columns = [
     accessor: "endTime",
     className: "hidden md:table-cell",
   },
-  {
-    header: "Actions",
-    accessor: "action",
-  },
+  ...(role === "admin"
+    ? [
+        {
+          header: "Actions",
+          accessor: "action",
+        },
+      ]
+    : []),
 ];
 
 const renderRow = (item: EventList) => (
@@ -68,8 +73,8 @@ const renderRow = (item: EventList) => (
       <div className="flex items-center gap-2">
         {role === "admin" && (
           <>
-            <FormModal table="event" type="update" data={item} />
-            <FormModal table="event" type="delete" id={item.id} />
+            <FormContainer table="event" type="update" data={item} />
+            <FormContainer table="event" type="delete" id={item.id} />
           </>
         )}
       </div>
@@ -89,18 +94,6 @@ export default async function EventListPage({
 
   const query: Prisma.EventWhereInput = {};
 
-  const [data, count] = await prisma.$transaction([
-    prisma.event.findMany({
-      where: query,
-      include: {
-        class: true,
-      },
-      take: ITEM_PER_PAGE,
-      skip: ITEM_PER_PAGE * (p - 1),
-    }),
-    prisma.event.count({ where: query }),
-  ]);
-
   if (queryParams) {
     for (const [key, value] of Object.entries(queryParams)) {
       if (value !== undefined) {
@@ -114,6 +107,33 @@ export default async function EventListPage({
       }
     }
   }
+
+  // ROLE CONDITIONS
+
+  const roleConditions = {
+    teacher: { lessons: { some: { teacherId: currentUserId! } } },
+    student: { students: { some: { id: currentUserId! } } },
+    parent: { students: { some: { parentId: currentUserId! } } },
+  };
+
+  query.OR = [
+    { classId: null },
+    {
+      class: roleConditions[role as keyof typeof roleConditions] || {},
+    },
+  ];
+
+  const [data, count] = await prisma.$transaction([
+    prisma.event.findMany({
+      where: query,
+      include: {
+        class: true,
+      },
+      take: ITEM_PER_PAGE,
+      skip: ITEM_PER_PAGE * (p - 1),
+    }),
+    prisma.event.count({ where: query }),
+  ]);
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
@@ -129,7 +149,7 @@ export default async function EventListPage({
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
               <Image src="/sort.png" alt="" width={14} height={14} />
             </button>
-            {role === "admin" && <FormModal table="event" type="create" />}
+            {role === "admin" && <FormContainer table="event" type="create" />}
           </div>
         </div>
       </div>

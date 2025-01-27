@@ -2,12 +2,13 @@ import Pagination from "@/app/components/Pagination";
 import Table from "@/app/components/Table";
 import TableSearch from "@/app/components/TableSearch";
 import FormModal from "@/app/components/FormModal";
-import { lessonsData, role } from "@/lib/data";
 import Image from "next/image";
 import { Class, Lesson, Prisma, Subject, Teacher } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { it } from "node:test";
+import { role } from "@/lib/utils";
+import FormContainer from "@/app/components/FormContainer";
 
 type LessonList = Lesson & { teacher: Teacher } & { class: Class } & {
   subject: Subject;
@@ -27,10 +28,14 @@ const columns = [
     accessor: "teacher",
     className: "hidden md:table-cell",
   },
-  {
-    header: "Actions",
-    accessor: "action",
-  },
+  ...(role === "admin"
+    ? [
+        {
+          header: "Actions",
+          accessor: "action",
+        },
+      ]
+    : []),
 ];
 
 const renderRow = (item: LessonList) => (
@@ -47,8 +52,8 @@ const renderRow = (item: LessonList) => (
       <div className="flex items-center gap-2">
         {role === "admin" && (
           <>
-            <FormModal table="lesson" type="update" data={item} />
-            <FormModal table="lesson" type="delete" id={item.id} />
+            <FormContainer table="lesson" type="update" data={item} />
+            <FormContainer table="lesson" type="delete" id={item.id} />
           </>
         )}
       </div>
@@ -114,7 +119,7 @@ export default async function LessonListPage({
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
               <Image src="/sort.png" alt="" width={14} height={14} />
             </button>
-            {role === "admin" && <FormModal table="lesson" type="create" />}
+            {role === "admin" && <FormContainer table="lesson" type="create" />}
           </div>
         </div>
       </div>

@@ -26,7 +26,9 @@ export default async function Navbar() {
           </div>
         </div>
         <div className="flex flex-col">
-          <span className="text-xs leading-3 font-medium">John Doe</span>
+          <span className="text-xs leading-3 font-medium">
+            {user?.firstName + " " + user?.lastName}
+          </span>
           <span className="text-[10px] text-grey-500 text-right">
             {user?.publicMetadata.role as string}
           </span>
